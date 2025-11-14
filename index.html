@@ -3,358 +3,61 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Appliance Fault Finder</title>
-    <!-- Load Tailwind CSS -->
-    <script src="https://cdn.tailwindcss.com"></script>
-    <!-- Use Inter font -->
-    <style>
-        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@100..900&display=swap');
-        body {
-            font-family: 'Inter', sans-serif;
-            background-color: #f3f4f6;
-        }
-        .container-shadow {
-            box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -2px rgba(0, 0, 0, 0.05);
-        }
-        /* Custom scrollbar for request list */
-        #request-list::-webkit-scrollbar {
-            width: 8px;
-        }
-        #request-list::-webkit-scrollbar-thumb {
-            background-color: #6366f1;
-            border-radius: 10px;
-        }
-        #request-list::-webkit-scrollbar-track {
-            background: #e0e7ff;
-        }
-    </style>
+    <title>Appliance Repair App</title>
+    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+    <link rel="stylesheet" href="styles.css">
 </head>
-<body class="min-h-screen p-4 md:p-8">
+<body>
+    <div id="app">
+        <h1>Appliance Repair App</h1>
+        
+        <!-- Registration/Login Section -->
+        <section id="auth-section">
+            <h2>Register or Login</h2>
+            <input type="text" id="username" placeholder="Username">
+            <input type="password" id="password" placeholder="Password">
+            <button onclick="registerUser()">Register</button>
+            <button onclick="loginUser()">Login</button>
+            <p id="auth-message"></p>
+        </section>
 
-    <div id="main-app" class="max-w-4xl mx-auto">
-        <header class="text-center py-6 mb-8 bg-white rounded-xl container-shadow">
-            <h1 class="text-3xl md:text-4xl font-extrabold text-indigo-700">Appliance Fix Hub</h1>
-            <p class="text-gray-500 mt-1">Submit your faulty appliance or offer help for a small fee.</p>
-        </header>
+        <!-- User Request Form (hidden until logged in) -->
+        <section id="request-section" style="display: none;">
+            <h2>Report Faulty Appliance</h2>
+            <input type="file" id="photo-upload" accept="image/*">
+            <img id="photo-preview" style="max-width: 200px; display: none;">
+            <input type="date" id="warranty-date">
+            <textarea id="issue-description" placeholder="Describe the issue"></textarea>
+            
+            <h3>Select Location on Map</h3>
+            <div id="map" style="height: 300px;"></div>
+            <p id="selected-location"></p>
+            
+            <button onclick="submitRequest()">Submit Request</button>
+        </section>
 
-        <!-- Loading/Auth Status -->
-        <div id="status-message" class="text-center p-3 mb-4 bg-yellow-100 text-yellow-800 rounded-lg hidden">
-            <p>Initializing application...</p>
-        </div>
+        <!-- Quotations List (hidden until request submitted) -->
+        <section id="quotations-section" style="display: none;">
+            <h2>Received Quotations</h2>
+            <ul id="quotations-list"></ul>
+        </section>
 
-        <main class="grid grid-cols-1 lg:grid-cols-3 gap-8">
-            <!-- 1. Submission Form -->
-            <section class="lg:col-span-1 bg-white p-6 rounded-xl container-shadow h-fit">
-                <h2 class="text-xl font-semibold mb-4 text-gray-700">Submit a New Faulty Appliance</h2>
-                <form id="submission-form" class="space-y-4">
-                    <div>
-                        <label for="description" class="block text-sm font-medium text-gray-700 mb-1">Issue Description</label>
-                        <textarea id="description" rows="4" required class="w-full p-3 border border-gray-300 rounded-lg focus:ring-indigo-500 focus:border-indigo-500 transition"></textarea>
-                    </div>
-                    <div>
-                        <label for="photo" class="block text-sm font-medium text-gray-700 mb-1">Photo of Appliance (Optional)</label>
-                        <input type="file" id="photo" accept="image/*" class="w-full text-sm text-gray-500
-                            file:mr-4 file:py-2 file:px-4
-                            file:rounded-full file:border-0
-                            file:text-sm file:font-semibold
-                            file:bg-indigo-50 file:text-indigo-700
-                            hover:file:bg-indigo-100 transition duration-150
-                        ">
-                        <p class="text-xs text-gray-400 mt-1">Images will be stored as base64 (max 100KB for Firestore limit).</p>
-                    </div>
-                    <button type="submit" id="submit-btn" class="w-full py-2 px-4 bg-indigo-600 text-white font-bold rounded-lg hover:bg-indigo-700 transition duration-200 shadow-md">
-                        Submit Request
-                    </button>
-                    <p id="my-user-id" class="text-xs text-gray-400 mt-2 break-all">Your User ID: Loading...</p>
-                </form>
-            </section>
-
-            <!-- 2. Requests List -->
-            <section class="lg:col-span-2 bg-white p-6 rounded-xl container-shadow">
-                <h2 class="text-xl font-semibold mb-4 text-gray-700 flex justify-between items-center">
-                    Open Requests
-                    <span id="request-count" class="text-sm font-normal text-indigo-500">0 requests</span>
-                </h2>
-                <div id="request-list" class="space-y-4 max-h-[80vh] overflow-y-auto pr-2">
-                    <!-- Requests will be injected here -->
-                    <div id="loading-requests" class="text-center p-8 text-gray-400">Loading requests...</div>
-                </div>
-            </section>
-        </main>
+        <!-- Technician Section (for demo, assume switch via button) -->
+        <section id="technician-section" style="display: none;">
+            <h2>Technician Dashboard</h2>
+            <p>Pending Requests:</p>
+            <ul id="pending-requests"></ul>
+            <div id="quote-form" style="display: none;">
+                <input type="number" id="quote-amount" placeholder="Quote Amount (VND)">
+                <input type="date" id="available-date" placeholder="Available Date">
+                <button onclick="submitQuote()">Submit Quote</button>
+            </div>
+        </section>
+        
+        <button onclick="toggleTechnicianMode()">Toggle Technician Mode</button>
     </div>
 
-    <!-- Custom Modal for Errors/Messages -->
-    <div id="message-modal" class="fixed inset-0 bg-gray-600 bg-opacity-75 hidden items-center justify-center p-4 z-50 transition-opacity">
-        <div class="bg-white p-6 rounded-xl container-shadow max-w-sm w-full">
-            <h3 id="modal-title" class="text-lg font-bold mb-3 text-red-600">Error</h3>
-            <p id="modal-content" class="text-gray-700 mb-4">An unknown error occurred.</p>
-            <button onclick="closeModal()" class="w-full py-2 bg-indigo-600 text-white font-bold rounded-lg hover:bg-indigo-700 transition">Close</button>
-        </div>
-    </div>
-
-    <!-- Firebase Imports (MUST use the global variables __app_id, __firebase_config, __initial_auth_token) -->
-    <script type="module">
-        import { initializeApp } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-app.js";
-        import { getAuth, signInAnonymously, signInWithCustomToken, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js";
-        import { getFirestore, collection, addDoc, onSnapshot, query, orderBy, updateDoc, doc, Timestamp, setLogLevel } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
-
-        // IMPORTANT: Use the global variables provided by the environment
-        const appId = typeof __app_id !== 'undefined' ? __app_id : 'default-app-id';
-        const firebaseConfig = typeof __firebase_config !== 'undefined' ? JSON.parse(__firebase_config) : {};
-        const initialAuthToken = typeof __initial_auth_token !== 'undefined' ? __initial_auth_token : null;
-
-        let db;
-        let auth;
-        let userId = null;
-
-        // Set up the modal display functions
-        window.openModal = (title, content, isError = false) => {
-            const modal = document.getElementById('message-modal');
-            document.getElementById('modal-title').textContent = title;
-            document.getElementById('modal-title').className = isError ? 'text-lg font-bold mb-3 text-red-600' : 'text-lg font-bold mb-3 text-green-600';
-            document.getElementById('modal-content').textContent = content;
-            modal.classList.remove('hidden');
-            modal.classList.add('flex');
-        };
-
-        window.closeModal = () => {
-            const modal = document.getElementById('message-modal');
-            modal.classList.add('hidden');
-            modal.classList.remove('flex');
-        };
-
-        // Utility to convert file to base64 string
-        const fileToBase64 = (file) => {
-            return new Promise((resolve, reject) => {
-                if (!file) return resolve(null);
-
-                // Limit file size to 100KB to prevent exceeding Firestore document limit
-                if (file.size > 100 * 1024) {
-                    return reject(new Error("Image is too large (max 100KB allowed). Please choose a smaller file."));
-                }
-
-                const reader = new FileReader();
-                reader.readAsDataURL(file);
-                reader.onload = () => resolve(reader.result);
-                reader.onerror = error => reject(error);
-            });
-        };
-
-        // --- FIREBASE INITIALIZATION AND AUTHENTICATION ---
-        try {
-            // Check for critical config components before initializing
-            if (Object.keys(firebaseConfig).length === 0 || !firebaseConfig.projectId) {
-                // If config is missing, throw a custom error to be caught below
-                throw new Error("Firebase configuration is missing or incomplete. Cannot initialize database.");
-            }
-
-            // setLogLevel('debug');
-            const app = initializeApp(firebaseConfig);
-            db = getFirestore(app);
-            auth = getAuth(app);
-            document.getElementById('status-message').classList.remove('hidden');
-            document.getElementById('status-message').innerHTML = '<p>Authenticating user...</p>';
-
-            onAuthStateChanged(auth, async (user) => {
-                if (user) {
-                    userId = user.uid;
-                    document.getElementById('my-user-id').textContent = `Your User ID: ${userId}`;
-                    document.getElementById('status-message').classList.add('hidden');
-                    setupFirestoreListeners(); // Start listening for data once auth is ready
-                } else {
-                    // Try to sign in with custom token, fall back to anonymous
-                    if (initialAuthToken) {
-                        await signInWithCustomToken(auth, initialAuthToken);
-                    } else {
-                        await signInAnonymously(auth);
-                    }
-                }
-            });
-
-        } catch (error) {
-            console.error("Firebase Initialization Error:", error);
-            document.getElementById('status-message').innerHTML = `<p class="text-red-600">Initialization failed: ${error.message}</p>`;
-            document.getElementById('status-message').classList.remove('hidden');
-            openModal("Initialization Error", `Failed to set up the application: ${error.message}`, true);
-        }
-
-        // --- FIREBASE FIRESTORE LOGIC ---
-        const PUBLIC_COLLECTION_PATH = `artifacts/${appId}/public/data/appliance_requests`;
-
-        const setupFirestoreListeners = () => {
-            if (!db || !userId) return;
-
-            const collectionRef = collection(db, PUBLIC_COLLECTION_PATH);
-            // Firestore data should be fetched and sorted in client side to avoid index missing error
-            const q = query(collectionRef);
-
-            // Real-time listener
-            onSnapshot(q, (snapshot) => {
-                const requests = [];
-                snapshot.forEach(doc => {
-                    // Use doc.data() and merge with the document ID
-                    requests.push({ id: doc.id, ...doc.data() });
-                });
-
-                // Sort the requests by timestamp (newest first) in memory
-                requests.sort((a, b) => (b.timestamp?.toMillis() || 0) - (a.timestamp?.toMillis() || 0));
-
-                renderRequests(requests);
-            }, (error) => {
-                console.error("Firestore Snapshot Error:", error);
-                openModal("Data Fetch Error", `Could not load requests: ${error.message}`, true);
-            });
-
-            document.getElementById('loading-requests').style.display = 'none';
-        };
-
-        const renderRequests = (requests) => {
-            const listElement = document.getElementById('request-list');
-            listElement.innerHTML = '';
-            document.getElementById('request-count').textContent = `${requests.length} request${requests.length !== 1 ? 's' : ''}`;
-
-            if (requests.length === 0) {
-                listElement.innerHTML = '<div class="text-center p-8 text-gray-500 border border-dashed rounded-lg">No open requests yet. Be the first to submit one!</div>';
-                return;
-            }
-
-            requests.forEach(request => {
-                const isMyRequest = request.userId === userId;
-                const isHelped = !!request.helperUserId;
-                const isMyHelp = request.helperUserId === userId;
-
-                let statusText = 'Awaiting help offer';
-                let statusColor = 'text-yellow-600 bg-yellow-100';
-                let buttonHtml = `<button data-id="${request.id}" class="offer-help-btn w-full py-2 px-4 bg-green-500 text-white font-bold rounded-lg hover:bg-green-600 transition duration-200">Offer Help for $5</button>`;
-
-                if (isHelped) {
-                    statusText = isMyRequest
-                        ? (isMyHelp ? 'You accepted your own request (Fix in progress)' : `Help offered by ${request.helperUserId.substring(0, 8)}...`)
-                        : (isMyHelp ? 'You are helping!' : `Help offered by another user`);
-                    statusColor = 'text-green-600 bg-green-100';
-                    buttonHtml = `<button disabled class="w-full py-2 px-4 bg-gray-400 text-white font-bold rounded-lg cursor-not-allowed">${isMyHelp ? 'Helping In Progress' : 'Help Offered'}</button>`;
-                } else if (isMyRequest) {
-                    statusText = 'Awaiting help offer (Your Request)';
-                    statusColor = 'text-indigo-600 bg-indigo-100';
-                    buttonHtml = `<button disabled class="w-full py-2 px-4 bg-indigo-400 text-white font-bold rounded-lg cursor-not-allowed">My Request</button>`;
-                }
-
-                const cardHtml = `
-                    <div class="p-4 border border-gray-200 rounded-xl bg-gray-50 hover:shadow-lg transition duration-200">
-                        <div class="flex justify-between items-start mb-3">
-                            <span class="text-xs font-medium px-2.5 py-0.5 rounded-full ${statusColor}">${statusText}</span>
-                            <span class="text-xs text-gray-500">${new Date(request.timestamp?.toDate()).toLocaleString()}</span>
-                        </div>
-                        
-                        ${request.photoUrl ? `
-                            <div class="mb-3">
-                                <img src="${request.photoUrl}" alt="Appliance Photo" class="w-full h-40 object-cover rounded-lg border border-gray-300">
-                            </div>
-                        ` : ''}
-
-                        <p class="text-sm font-semibold text-gray-800 mb-2">Issue by User: ${request.userId.substring(0, 8)}...</p>
-                        <p class="text-gray-600 mb-4">${request.description}</p>
-
-                        ${buttonHtml}
-                    </div>
-                `;
-                listElement.insertAdjacentHTML('beforeend', cardHtml);
-            });
-
-            // Attach event listeners to new buttons
-            document.querySelectorAll('.offer-help-btn').forEach(button => {
-                button.addEventListener('click', handleOfferHelp);
-            });
-        };
-
-        // --- FORM SUBMISSION HANDLERS ---
-        document.getElementById('submission-form').addEventListener('submit', async (e) => {
-            e.preventDefault();
-            if (!userId) {
-                openModal("Authentication Required", "Please wait for user authentication to complete before submitting.", true);
-                return;
-            }
-
-            const btn = document.getElementById('submit-btn');
-            const originalText = btn.textContent;
-            btn.disabled = true;
-            btn.textContent = 'Submitting...';
-
-            try {
-                const description = document.getElementById('description').value.trim();
-                const photoFile = document.getElementById('photo').files[0];
-                let photoUrl = null;
-
-                if (photoFile) {
-                    photoUrl = await fileToBase64(photoFile);
-                }
-
-                const collectionRef = collection(db, PUBLIC_COLLECTION_PATH);
-
-                await addDoc(collectionRef, {
-                    userId: userId,
-                    description: description,
-                    photoUrl: photoUrl,
-                    timestamp: Timestamp.now(),
-                    helperUserId: null,
-                    fee: 5.00 // Mock fee value
-                });
-
-                openModal("Success!", "Your faulty appliance request has been posted successfully.");
-                document.getElementById('submission-form').reset();
-
-            } catch (error) {
-                console.error("Submission Error:", error);
-                openModal("Submission Failed", `Error posting request: ${error.message}`, true);
-            } finally {
-                btn.disabled = false;
-                btn.textContent = originalText;
-            }
-        });
-
-        const handleOfferHelp = async (e) => {
-            const requestId = e.target.dataset.id;
-            if (!userId) {
-                openModal("Authentication Required", "Please wait for user authentication to complete before offering help.", true);
-                return;
-            }
-
-            // Simple confirmation without using window.confirm()
-            if (!confirm("Are you sure you want to offer help for this request? The service fee is $5 (mock payment).")) {
-                 return;
-            }
-
-            const btn = e.target;
-            const originalText = btn.textContent;
-            btn.disabled = true;
-            btn.textContent = 'Offering...';
-
-            try {
-                const docRef = doc(db, PUBLIC_COLLECTION_PATH, requestId);
-                await updateDoc(docRef, {
-                    helperUserId: userId
-                });
-
-                openModal("Help Offered!", "You have offered to help with this request. The original poster will be notified (simulated).");
-            } catch (error) {
-                console.error("Offer Help Error:", error);
-                openModal("Update Failed", `Error offering help: ${error.message}`, true);
-            } finally {
-                // The onSnapshot listener will handle re-rendering, so we just reset the button state temporarily
-                setTimeout(() => {
-                    if (btn.textContent === 'Offering...') {
-                        btn.textContent = originalText;
-                        btn.disabled = false;
-                    }
-                }, 500); // Give Firestore a moment to update
-            }
-        };
-
-        // Custom confirm function to replace window.confirm
-        const confirm = (message) => {
-            return window.prompt(message + " (Type 'yes' to confirm)")?.toLowerCase() === 'yes';
-        };
-
-    </script>
+    <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+    <script src="script.js"></script>
 </body>
 </html>
