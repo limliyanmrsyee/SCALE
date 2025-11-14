@@ -142,6 +142,12 @@
 
         // --- FIREBASE INITIALIZATION AND AUTHENTICATION ---
         try {
+            // Check for critical config components before initializing
+            if (Object.keys(firebaseConfig).length === 0 || !firebaseConfig.projectId) {
+                // If config is missing, throw a custom error to be caught below
+                throw new Error("Firebase configuration is missing or incomplete. Cannot initialize database.");
+            }
+
             // setLogLevel('debug');
             const app = initializeApp(firebaseConfig);
             db = getFirestore(app);
